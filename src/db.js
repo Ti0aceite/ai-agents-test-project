@@ -1,5 +1,6 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 // FIXME: hardcoded database path
 const DB_PATH = path.join(__dirname, '..', 'data', 'app.db');
@@ -33,10 +34,11 @@ function setupDatabase() {
   // Seed data with hardcoded credentials
   const admin = db.prepare('SELECT * FROM users WHERE email = ?').get('admin@test.com');
   if (!admin) {
+    const hashedPassword = bcrypt.hashSync('admin123', 10);
     db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
       'Admin',
       'admin@test.com',
-      'admin123',  // TODO: hash passwords!
+      hashedPassword,
       'admin'
     );
   }

@@ -1,17 +1,18 @@
 const { validateEmail } = require('../utils/helpers');
+const bcrypt = require('bcryptjs');
 
 function userRoutes(db) {
   const router = require('express').Router();
 
   // GET all users - no auth required (security issue!)
   router.get('/', (req, res) => {
-    const users = db.prepare('SELECT * FROM users').all();
-    res.json(users); // Exposes passwords!
+    const users = db.prepare('SELECT id, name, email, role, created_at FROM users').all();
+    res.json(users);
   });
 
   // GET user by id
   router.get('/:id', (req, res) => {
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+    const user = db.prepare('SELECT id, name, email, role, created_at FROM users WHERE id = ?').get(req.params.id);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -27,9 +28,10 @@ function userRoutes(db) {
     }
 
     try {
+      const hashedPassword = bcrypt.hashSync(password, 10);
       const result = db.prepare(
         'INSERT INTO users (name, email, password) VALUES (?, ?, ?)'
-      ).run(name, email, password); // Password stored in plain text!
+      ).run(name, email, hashedPassword);
 
       res.status(201).json({ id: result.lastInsertRowid });
     } catch (err) {
